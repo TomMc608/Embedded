@@ -1,12 +1,64 @@
-
 #define LED_COUNT 54
 
-#include "Arduino.h"
-#include "cube.h"
+
 #include <PololuLedStrip.h>
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
+PololuLedStrip<2> ledStrip; 
+
+#include "Arduino.h"
+#include "choices.h"
+
+Choices::Choices(int AIpin, int numOpt)
+{
+  _AIpin = AIpin;
+  _numOpt = numOpt;
+}
 
 
-PololuLedStrip<2> ledStrip;  //Sturing ledstrip op DO 2
+int Choices::getOption() {
+  bool valid = 0;
+
+  while (!valid) {
+    int value = readValue();
+
+    const int maxValue = 1024;
+    int stepSize = maxValue/(_numOpt+1);
+    int validZone = stepSize/4;
+
+    for (int curOpt = 0; curOpt <= _numOpt; curOpt++) {
+      if (value > curOpt*stepSize-validZone && value < curOpt*stepSize+validZone) {
+        return(curOpt);
+      }   
+    }
+  }
+}
+
+
+int Choices::readValue(){
+  const int numReads = 10; //Value is measured multiple times
+  analogReference(EXTERNAL);
+  int totVal  = 0;
+  int lowest  = 1024;
+  int highest = 0;
+  delay(10);
+  for (int i = 0; i < numReads; i++) {
+    int curVal = analogRead(_AIpin);
+    if (curVal < lowest) lowest = curVal;
+    if (curVal > highest) highest = curVal;
+    totVal += curVal;
+    delay(10);
+  }
+  int value = totVal/numReads;
+  if ((highest - lowest)>50) value = 0;
+  return(value);
+}
+
+
+//--------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 Cube::Cube(int) {
 
@@ -358,4 +410,41 @@ void Cube::show() {
   ledStrip.write(Colors, LED_COUNT);
 }
 
- 
+ //--------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+Output::Output(bool serial, bool cryst) {
+  lcd.begin(16,2);
+  _serial = serial;
+  _cryst  = cryst;
+}
+
+void Output::clrscr() {          //clear screen (go to next line in Serial output)
+  if (_serial) {
+    Serial.println();
+  }
+  if (_cryst) {
+    lcd.clear();
+  }
+}
+
+void Output::txt(String text) {   //write text
+  if (_serial) {
+    Serial.print(text);     
+  }
+  if (_cryst) { 
+    lcd.print(text);
+  }
+}
+
+void Output::nxtln() {             //go to next line
+  if (_serial) {
+    Serial.println();
+  }
+  if (_cryst) { 
+    lcd.setCursor(0,1);
+  }
+}

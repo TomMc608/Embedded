@@ -1,7 +1,4 @@
-
 #include "choices.h"
-#include "cube.h"
-#include "output.h"
 #include <LiquidCrystal.h>
 #include <PololuLedStrip.h>
 
@@ -91,13 +88,9 @@ void loop() {
       do {
         if (turnsInHist == 0) {
           MyOutput.clrscr();
-#ifndef _dutch
           MyOutput.txt("Cannot undo");
-#else
-          MyOutput.txt("Ongedaan maken");
-          MyOutput.nxtln();
-          MyOutput.txt("niet mogelijk");
-#endif
+
+
           delay(1000);
           escFlag = true;
         } 
@@ -108,15 +101,11 @@ void loop() {
         delay(500);
         if (turnsInHist == 0) break;
         MyOutput.clrscr();
-#ifndef _dutch
         MyOutput.txt("Undo another");
         MyOutput.nxtln(); 
         MyOutput.txt("turn?");
-#else
-        MyOutput.txt("Nogmaals"); 
-        MyOutput.nxtln();       
-        MyOutput.txt("terug draaien?");
-#endif
+
+
         while (!escFlag) {
           int choice = RightPanel.getOption();        
           if (choice == RightPanel.highBut) {
@@ -148,11 +137,9 @@ void loop() {
   }
   if (MyCube.checkCubeSolved()) {
     MyOutput.clrscr();
-#ifndef _dutch
-    MyOutput.txt("Cube solved!");
-#else
-    MyOutput.txt("Kubus opgelost!");
-#endif
+MyOutput.txt("Cube solved!");
+
+
     for (int i=0; i<5; i++) {
       delay(500);
       MyCube.dark();

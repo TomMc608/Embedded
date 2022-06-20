@@ -1,16 +1,39 @@
-#ifndef cube_h
+#define choices_h
 #define cube_h
+#define output_h
 
-#include "Arduino.h"
+#include <LiquidCrystal.h>
 #include  <PololuLedStrip.h>
+#include "Arduino.h"
+
+class Choices
+{
+  public:
+    Choices(int AIpin, int numOpt);
+    int getOption();
+    const int arrowUp     = 1;
+    const int arrowLeft   = 2;
+    const int arrowCentre = 3;
+    const int arrowRight  = 4;
+    const int arrowDown   = 5;
+    const int highBut     = 1;
+    const int midBut      = 2;
+    const int lowBut      = 3;
+    
+  private:
+    int _AIpin;
+    int _numOpt;
+    int readValue();
+};
+
 
 
 class Cube
 {
   public:
     Cube(int);
-    int noIdeaWhy;                      //somehow a class cannot have a constructor without an arguement...
-    void reInit();                      //reinitializes the Cube
+    int noIdeaWhy;                     
+    void reInit();                     
     void show();
     void dark();
     void showTurnSide(int side,bool dir);
@@ -18,10 +41,10 @@ class Cube
     void showTurnCube(int side,bool dir);
     bool checkCubeSolved();             //checks if the cube is solved
     void littleShow();                  //gives a little show
-    void toScreen();                    //writes Cube to computer screen via Serial
-    const byte* handCube();             //hands Cube to main program
+    void toScreen();                    
+    const byte* handCube();             
 
-    static const int numSides = 6;      //Cube has 6 sides
+    static const int numSides = 6;      
     
     const int backSide   = 3;
     const int topSide    = 2;
@@ -48,4 +71,17 @@ class Cube
     byte* midsPtr[numSides][numRimPos];   //array of pointers to addresses of the mids positions of a Side, used in turnMid()   
     byte delta_t = 150;                   //gives good visuals
 };
-#endif
+
+
+class Output
+{
+  public:
+    Output(bool serial,bool cryst);
+    int noIdeaWhy;
+    void txt(String);
+    void nxtln();
+    void clrscr();
+  private:
+    bool _serial;
+    bool _cryst; 
+};
