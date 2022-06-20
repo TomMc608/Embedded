@@ -1,414 +1,367 @@
-/* this program turns a ledstrip glued to a wooden cube into a Rubiks Cube 
- *  
- */
-//major changes on March 18th 2019
-#include "choices.h"
-#include "cube.h"
-#include "output.h"
-#include <LiquidCrystal.h>
-#include <PololuLedStrip.h>
+#include <FastLED.h>
+#define LED_PIN  9
+#define NUM_LEDS  54
 
-Choices LeftPanel(A5, 5); //set 5 options at pin A5
-Choices RightPanel(A4, 3);//set 3 options at pin A3
-Cube MyCube(3);           //would be nice to have DO port of ledstrip as an argument
-Output MyOutput(false, true);  //output to Serial output and or lcd output
 
-#define _dutch   //dutch language selected, conditional compiling is applied because insufficient dynamic memory to store 2 languages
+CRGB leds[NUM_LEDS];
+
+
 
 void setup() {
-  Serial.begin(9600);
-  delay(500);
-  MyCube.show();
-  delay(500);
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Hello there!");  //default language
-#else
-  MyOutput.txt("Hallo daar!"); 
-#endif
-  MyCube.littleShow();
-  MyOutput.clrscr();
+
+  FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
+  FastLED.setBrightness(10);
+
 }
-
-
-
-const int turnSide  = 0;
-const int turnMid   = 1;
-const int turnCube  = 2;
-const int undoLast  = 3;
-const int solveCube = 4;
-
-const bool CW = true;
-
-const int histMax = 30;    //max number of turns in memory
-int turnNr      = 0;       //number of turns done    
-int lastSolved  = 0;       //last time that cube was solved
-int turnsInHist = 0;       //current number of turns in history
-byte turnHist[histMax];
-/* turns are stored in turnHist
- *  1 byte is used to store turn
- *  1 byte may represent numbers from 0 - 255
- *  coding: 100*dir + 10 * side + task
- *  history should be implemented in Class Cube
- */
-bool escFlag = false;
 
 void loop() {
 
-  int task;
-  int side;
-  bool dir;
+  Face1Row1();
+  Face1Row2();
+  Face1Row3();
+  Face2Row1();
+  Face2Row2();
+  Face2Row3();
+  Face3Row1();
+  Face3Row2();
+  Face3Row3();
+  Face4Row1();
+  Face4Row2();
+  Face4Row3();
+  Face5Row1();
+  Face5Row2();
+  Face5Row3();
+  Face6Row1();
+  Face6Row2();
+  Face6Row3();
 
-  escFlag = false;
-  task = getTask();
-  switch (task) {
-    case turnSide:
-      while (true) {
-        side = getSide();
-        if (escFlag) break;
-        dir  = getDir();
-        if (escFlag) break;
-        MyCube.showTurnSide(side, dir);     
-        turnHist[turnNr%histMax]= 100*dir+ 10*side + task; 
-        turnNr++;
-        turnsInHist++;
-      }
-      break;
-    case turnMid:
-      while (true) {
-        side = getSide();
-        if (escFlag) break;              
-        dir  = getDir();
-        if (escFlag) break;
-        MyCube.showTurnMid(side, dir);
-        turnHist[turnNr%histMax]= 100*dir+ 10*side + task;  
-        turnNr++;
-        turnsInHist++;
-      }
-      break;      
-    case turnCube:
-      while (true) {
-        side = getSide();
-        if (escFlag) break; 
-        dir  = getDir();   
-        if (escFlag) break;   
-        MyCube.showTurnCube(side,dir);
-        turnHist[turnNr%histMax]= 100*dir+ 10*side + task;      
-        turnNr++;
-        turnsInHist++;
-      }
-      break;
-    case undoLast:      
-      do {
-        if (turnsInHist == 0) {
-          MyOutput.clrscr();
-#ifndef _dutch
-          MyOutput.txt("Cannot undo");
-#else
-          MyOutput.txt("Ongedaan maken");
-          MyOutput.nxtln();
-          MyOutput.txt("niet mogelijk");
-#endif
-          delay(1000);
-          escFlag = true;
-        } 
-        if (escFlag) break;   
-        turnNr--;
-        turnsInHist--;           
-        undoLastTurn();
-        delay(500);
-        if (turnsInHist == 0) break;
-        MyOutput.clrscr();
-#ifndef _dutch
-        MyOutput.txt("Undo another");
-        MyOutput.nxtln(); 
-        MyOutput.txt("turn?");
-#else
-        MyOutput.txt("Nogmaals"); 
-        MyOutput.nxtln();       
-        MyOutput.txt("terug draaien?");
-#endif
-        while (!escFlag) {
-          int choice = RightPanel.getOption();        
-          if (choice == RightPanel.highBut) {
-            escFlag = true;
-            break;
-          }
-          if (choice == RightPanel.lowBut) {
-            break;
-          }
-        }  
-      } while (!escFlag);  
-      break;
-    case solveCube:
-      if ((turnsInHist == 0) || ((turnNr-lastSolved)>turnsInHist)) {  //not enough memory to undo until solved
-        MyCube.reInit();
-        lastSolved = 0;
-        turnNr = 0;
-        turnsInHist = 0;
-      }
-      else {
-        while(turnNr > lastSolved) {
-          turnNr--;   
-          turnsInHist--;      
-          undoLastTurn();
-          delay(500); 
-        }     
-      }
-      break;
-  }
-  if (MyCube.checkCubeSolved()) {
-    MyOutput.clrscr();
-#ifndef _dutch
-    MyOutput.txt("Cube solved!");
-#else
-    MyOutput.txt("Kubus opgelost!");
-#endif
-    for (int i=0; i<5; i++) {
-      delay(500);
-      MyCube.dark();
-      delay(500);
-      MyCube.show();
-      lastSolved = turnNr;
-    }
-  }
-  if (turnsInHist>histMax) turnsInHist = histMax;
-  delay(500);
-}
-
-void undoLastTurn() {
-  byte dir = turnHist[turnNr%histMax]/100;
-  byte side = (turnHist[turnNr%histMax]-100*dir)/10;
-  byte task = turnHist[turnNr%histMax]-100*dir-10*side;
-  if (task == turnSide) {
-    MyCube.showTurnSide(side,!dir);
-  }
-  if (task == turnMid) {
-    MyCube.showTurnMid(side,!dir);
-  }
-  if (task == turnCube) {
-    MyCube.showTurnCube(side,!dir);
-  }
-}
-
-
-int getTask() {
-#ifndef _dutch
-  const String Tasks[] = {"Turn side ",
-                          "Turn mids ",
-                          "Turn cube ",
-                          "Undo turn ",
-                          "Solve cube"};                             
-#else
-  const String Tasks[] = {"Draai zijkant",
-                          "Draai midden ",
-                          "Draai kubus  ",
-                          "Draai terug  ",
-                          "Los kubus op "};
-#endif
-                          
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Choose task>");
-#else
-  MyOutput.txt("Kies taak>");
-#endif
-  MyOutput.nxtln();
-  int ans = turnSide;
-  MyOutput.txt(Tasks[ans]);
-  MyOutput.nxtln();
-  while (!confirmed()) {
-    int old_ans = ans;
-    int userInput = LeftPanel.getOption();
-    if (userInput == LeftPanel.arrowUp   || userInput == LeftPanel.arrowRight)   ans++;
-    if (userInput == LeftPanel.arrowDown || userInput == LeftPanel.arrowLeft) ans--;
-    if (ans==-1)  ans = solveCube;
-    if (ans== 5)  ans = turnSide;
-    if (ans != old_ans) {
-      MyOutput.txt(Tasks[ans]);
-      MyOutput.nxtln();
-      delay(100);
-    }
-  }
-  MyOutput.nxtln();
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Choice= ");
-#else
-  MyOutput.txt("Keuze= ");
-#endif
-  MyOutput.nxtln();
-  MyOutput.txt(Tasks[ans]);
+  Face1Column1();
+  Face1Column2();
+  Face1Column3();
   delay(1000);
-  return ans;
-}
-
- 
-int getSide() {
-
-#ifndef _dutch                                                   
-  const String Txts[]       = {"Turn ",
-                               " side"};
-  const String SidesTxt[]  = {"ground",
-                              "front ",
-                              " top  ",                             
-                              " back ",
-                              " left ",
-                              "right "};   
-                                                  
-#else                                                   
-  const String Txts[]       = {"Draai ",
-                               "kant"};
-                           
-  const String SidesTxt[]  = {" onder",                                       
-                              "  voor",
-                              " boven",
-                              "achter",
-                              "linker",
-                              "rechter"};
-#endif
-              
-  MyOutput.nxtln();
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Choose side/axis>");  
-#else
-  MyOutput.txt("Kies zijkant/as>");  
-#endif
-  MyOutput.nxtln();
-  MyOutput.txt(Txts[0]);  
-  int ans = MyCube.frontSide;
-  MyOutput.txt(SidesTxt[ans]);
-  MyOutput.txt(Txts[1]);  
-
-  while (!confirmed()) {
-    if (RightPanel.getOption() == RightPanel.highBut) {
-       escFlag = true;
-       return;
-    }
-    int old_ans = ans;
-    int userInput = LeftPanel.getOption();
-    if (ans > -1 && ans < 4) { 
-      if (userInput == LeftPanel.arrowUp) {
-         ans++;
-         if (ans == 4) {
-           ans = MyCube.groundSide;
-         }
-      } 
-      if (userInput == LeftPanel.arrowDown) {
-        ans--;
-        if (ans == -1) {
-          ans = MyCube.backSide;
-        }
-      } 
-      if (userInput == LeftPanel.arrowLeft) {
-        ans = MyCube.leftSide;
-      }
-      if (userInput == LeftPanel.arrowRight) {
-        ans = MyCube.rightSide;
-      }
-    }
-    if (ans == MyCube.leftSide) {
-      if (userInput == LeftPanel.arrowRight) {
-         ans = MyCube.frontSide;
-      }
-      if (userInput == LeftPanel.arrowUp) {
-         ans = MyCube.topSide;
-      }
-      if (userInput == LeftPanel.arrowDown) {
-         ans = MyCube.groundSide;
-      }
-    }
-    if (ans == MyCube.rightSide) { 
-      if (userInput == LeftPanel.arrowLeft) {
-        ans = MyCube.frontSide;
-      }
-      if (userInput == LeftPanel.arrowUp) {
-         ans = MyCube.topSide;
-      }
-      if (userInput == LeftPanel.arrowDown) {
-         ans = MyCube.groundSide;
-      }
-    } 
-    if (userInput == LeftPanel.arrowCentre) {
-       ans = MyCube.frontSide;
-    }
-    if (ans != old_ans) {
-      MyOutput.nxtln();
-      MyOutput.txt(Txts[0]);
-      MyOutput.txt(SidesTxt[ans]);
-      MyOutput.txt(Txts[1]);
-      delay(100);
-    }
-  }
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Choice= ");
-#else 
-  MyOutput.txt("Keuze = ");
-#endif
-  MyOutput.nxtln();  
-  MyOutput.txt(Txts[0]); 
-  MyOutput.txt(SidesTxt[ans]);
-  MyOutput.txt(Txts[1]);
+  Face2Column1();
+  Face2Column2();
+  Face2Column3();
   delay(1000);
-  return ans;
-}
-
-
-bool getDir() {
-
-#ifndef _dutch
-  const String DirTxt[]   = {"Left  turn",
-                             "Right turn"};
-#else
-  const String DirTxt[]   = {"Linksom ",
-                             "Rechtsom"}; 
-#endif                            
-  bool CW = 1;
-  bool ans = CW;
-
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Choose direction>");
-#else
-  MyOutput.txt("Kies richting>");
-#endif
-  MyOutput.nxtln();
-  MyOutput.txt(DirTxt[ans]);
-  while (!confirmed()) {
-    if (RightPanel.getOption() == RightPanel.highBut) {
-       escFlag = true;
-       return;
-    }
-    bool old_ans = ans;
-    int userInput = LeftPanel.getOption();
-    if (userInput != 0) {
-      ans = !ans;
-    }
-    if (ans != old_ans) {
-      MyOutput.nxtln();
-      MyOutput.txt(DirTxt[ans]);
-      delay(100);
-    }
-  }
-  MyOutput.clrscr();
-#ifndef _dutch
-  MyOutput.txt("Direction=");
-#else
-  MyOutput.txt("Richting=");
-#endif
-  MyOutput.nxtln();
-  MyOutput.txt(DirTxt[ans]);
+  Face3Column1();
+  Face3Column2();
+  Face3Column3();
   delay(1000);
-  return ans;
+  Face4Column1();
+  Face4Column2();
+  Face4Column3();
+  delay(1000);
+  Face5Column1();
+  Face5Column2();
+  Face5Column3();
+  delay(1000);
+  Face6Column1();
+  Face6Column2();
+  Face6Column3();
+}
+
+void Face1Row1() {
+  for (int i = 0; i <= 2; i++) {
+    leds[i] = CRGB (255, 0, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face1Row2() {
+  for (int i = 3; i <= 5; i++) {
+    leds[i] = CRGB (255, 0, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face1Row3() {
+  for (int i = 6; i <= 8; i++) {
+    leds[i] = CRGB (255, 0, 0);
+    FastLED.show();
+
+  }
+}
+
+//----------------------------------------
+
+void Face2Row1() {
+  for (int i = 9; i <= 11; i++) {
+    leds[i] = CRGB (255, 255, 255);
+    FastLED.show();
+
+  }
+}
+
+void Face2Row2() {
+  for (int i = 12; i <= 14; i++) {
+    leds[i] = CRGB (255, 255, 255);
+    FastLED.show();
+
+  }
+}
+
+void Face2Row3() {
+  for (int i = 15; i <= 17; i++) {
+    leds[i] = CRGB (255, 255, 255);
+    FastLED.show();
+
+  }
+}
+void Face3Row1() {
+  for (int i = 18; i <= 20; i++) {
+    leds[i] = CRGB (255, 255, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face3Row2() {
+  for (int i = 21; i <= 23; i++) {
+    leds[i] = CRGB (255, 255, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face3Row3() {
+  for (int i = 24; i <= 26; i++) {
+    leds[i] = CRGB (255, 255, 0);
+    FastLED.show();
+
+  }
+}
+
+//----------------------------------------
+void Face4Row1() {
+  for (int i = 27; i <= 29; i++) {
+    leds[i] = CRGB (0, 0, 255);
+    FastLED.show();
+
+  }
+}
+
+void Face4Row2() {
+  for (int i = 30; i <= 32; i++) {
+    leds[i] = CRGB (0, 0, 255);
+    FastLED.show();
+
+  }
+}
+
+void Face4Row3() {
+  for (int i = 33; i <= 35; i++) {
+    leds[i] = CRGB (0, 0, 255);
+    FastLED.show();
+
+  }
+}
+
+//----------------------------------------
+void Face5Row1() {
+  for (int i = 36; i <= 38; i++) {
+    leds[i] = CRGB (255, 165, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face5Row2() {
+  for (int i = 39; i <= 41; i++) {
+    leds[i] = CRGB (255, 165, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face5Row3() {
+  for (int i = 42; i <= 44; i++) {
+    leds[i] = CRGB (255, 165, 0);
+    FastLED.show();
+
+  }
+}
+
+//----------------------------------------
+void Face6Row1() {
+  for (int i = 45; i <= 47; i++) {
+    leds[i] = CRGB (0, 255, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face6Row2() {
+  for (int i = 48; i <= 50; i++) {
+    leds[i] = CRGB (0, 255, 0);
+    FastLED.show();
+
+  }
+}
+
+void Face6Row3() {
+  for(int i = 51; i <= 53; i++){
+  leds[i] = CRGB (0, 255, 0);
+  FastLED.show();
+  }
+
 }
 
 
-bool confirmed() {
-  int UserInput = RightPanel.getOption();
-  if (UserInput == RightPanel.lowBut) {
-    return 1;
-  }
-  return 0;
+//-------------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------------------------------------
+
+
+
+void Face1Column1() {
+  int x = 0; int y = 3; int z = 6;
+  leds[x] = CRGB (255, 0, 0);
+  leds[y] = CRGB (255, 0, 0);
+  leds[z] = CRGB (128, 0, 0);
+  FastLED.show();
+
+  
+}
+
+void Face1Column2() {
+  int x = 1; int y = 4; int z = 7;
+  leds[x] = CRGB (255, 0, 0);
+  leds[y] = CRGB (255, 0, 0);
+  leds[z] = CRGB (255, 0, 0);
+  FastLED.show();
+}
+
+void Face1Column3() {
+  int x = 2; int y = 5; int z = 8;
+  leds[x] = CRGB (255, 0, 0);
+  leds[y] = CRGB (255, 0, 0);
+  leds[z] = CRGB (255, 0, 0);
+  FastLED.show();
+}
+
+//----------------------------------------
+
+void Face2Column1() {
+  int x = 9; int y = 12; int z = 15;
+  leds[x] = CRGB (255, 255, 255);
+  leds[y] = CRGB (255, 255, 255);
+  leds[z] = CRGB (255, 255, 255);
+  FastLED.show();
+}
+
+void Face2Column2() {
+ int x = 10; int y = 13; int z = 16;
+  leds[x] = CRGB (255, 255, 255);
+  leds[y] = CRGB (255, 255, 255);
+  leds[z] = CRGB (255, 255, 255);
+  FastLED.show();
+}
+
+void Face2Column3() {
+ int x = 11; int y = 14; int z = 17;
+  leds[x] = CRGB (255, 255, 255);
+  leds[y] = CRGB (255, 255, 255);
+  leds[z] = CRGB (255, 255, 255);
+  FastLED.show();
+}
+
+//-------------------------------------
+void Face3Column1() {
+ int x = 18; int y = 21; int z = 24;
+  leds[x] = CRGB (255, 255, 0);
+  leds[y] = CRGB (255, 255, 0);
+  leds[z] = CRGB (255, 255, 0);
+  FastLED.show();
+}
+
+void Face3Column2() {
+ int x = 19; int y = 22; int z = 25;
+  leds[x] = CRGB (255, 255, 0);
+  leds[y] = CRGB (255, 255, 0);
+  leds[z] = CRGB (255, 255, 0);
+  FastLED.show();
+}
+
+void Face3Column3() {
+ int x = 20; int y = 23; int z = 26;
+  leds[x] = CRGB (255, 255, 0);
+  leds[y] = CRGB (255, 255, 0);
+  leds[z] = CRGB (255, 255, 0);
+  FastLED.show();
+}
+//
+////----------------------------------------
+void Face4Column1() {
+ int x = 27; int y = 30; int z = 33;
+  leds[x] = CRGB (0, 0, 255);
+  leds[y] = CRGB (0, 0, 255);
+  leds[z] = CRGB (0, 0, 255);
+  FastLED.show();
+}
+
+void Face4Column2() {
+ int x = 28; int y = 31; int z = 34;
+  leds[x] = CRGB (0, 0, 255);
+  leds[y] = CRGB (0, 0, 255);
+  leds[z] = CRGB (0, 0, 255);
+  FastLED.show();
+}
+
+void Face4Column3() {
+ int x = 29; int y = 32; int z = 35;
+  leds[x] = CRGB (0, 0, 255);
+  leds[y] = CRGB (0, 0, 255);
+  leds[z] = CRGB (0, 0, 255);
+  FastLED.show();
+}
+//
+////----------------------------------------
+void Face5Column1() {
+ int x = 36; int y = 39; int z = 42;
+  leds[x] = CRGB (255, 165, 0);
+  leds[y] = CRGB (255, 165, 0);
+  leds[z] = CRGB (255, 165, 0);
+  FastLED.show();
+}
+
+void Face5Column2() {
+ int x = 37; int y = 40; int z = 43;
+  leds[x] = CRGB (255, 165, 0);
+  leds[y] = CRGB (255, 165, 0);
+  leds[z] = CRGB (255, 165, 0);
+  FastLED.show();
+}
+
+void Face5Column3() {
+ int x = 38; int y = 41; int z = 44;
+  leds[x] = CRGB (255, 165, 0);
+  leds[y] = CRGB (255, 165, 0);
+  leds[z] = CRGB (255, 165, 0);
+  FastLED.show();
+}
+//
+////----------------------------------------
+void Face6Column1() {
+  int x = 45; int y = 48; int z = 51;
+  leds[x] = CRGB (0, 255, 0);
+  leds[y] = CRGB (0, 255, 0);
+  leds[z] = CRGB (0, 255, 0);
+  FastLED.show();
+}
+
+void Face6Column2() {
+ int x = 46; int y = 49; int z = 52;
+  leds[x] = CRGB (0, 255, 0);
+  leds[y] = CRGB (0, 255, 0);
+  leds[z] = CRGB (0, 255, 0);
+  FastLED.show();
+}
+
+void Face6Column3() {
+  int x = 47; int y = 50; int z = 53;
+  leds[x] = CRGB (0, 255, 0);
+  leds[y] = CRGB (0, 255, 0);
+  leds[z] = CRGB (0, 255, 0);
+  FastLED.show();
 }
