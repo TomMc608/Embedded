@@ -8,7 +8,7 @@ LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
 PololuLedStrip<2> ledStrip; 
 
 #include "Arduino.h"
-#include "choices.h"
+#include "x.h"
 
 Choices::Choices(int AIpin, int numOpt)
 {
@@ -108,9 +108,9 @@ Cube::Cube(int) {
 
 //This function checks if the cube is solved (each side has one color)
 bool Cube::checkCubeSolved() {
-  for (int curSide = 0; curSide < numSides; curSide++) {    //check all sides
+  for (int curSide = 0; curSide < numSides; curSide++) {    
     byte sideColor = Color[curSide][0]/10;
-    for (int curPos = 1; curPos < numPos; curPos++) {       //fill all positions
+    for (int curPos = 1; curPos < numPos; curPos++) {       
       if (!(Color[curSide][curPos]/10==sideColor)) return false;  
     }
   } 
@@ -119,28 +119,15 @@ bool Cube::checkCubeSolved() {
 
 //This procedure reinitializes the cube
 void Cube::reInit() {
-  for (int curSide = 0; curSide < numSides; curSide++) {    //fill all sides
-    for (int curPos = 0; curPos < numPos; curPos++) {       //fill all positions
+  for (int curSide = 0; curSide < numSides; curSide++) {   
+    for (int curPos = 0; curPos < numPos; curPos++) {      
       Color[curSide][curPos] = 10*curSide + curPos;       //later colours will be set here  
     }
   } 
   show(); 
 }
 
-//This procedure does a little show
-void Cube::littleShow() {
-  delay(1000);
-  for (int i=0; i<4; i++) {
-    showTurnMid(i,!CW);
-    delay(1000);
-  }
-  for (int i=3; i>=0; i--) {
-    showTurnMid(i,CW);
-    delay(1000);
-  }
-  delay(1000);
-  reInit();
-}
+
 
 //This procedure shows a turn of the cube as a whole
 void Cube::showTurnCube(int side,bool dir) { 
@@ -225,7 +212,7 @@ void Cube::turnRim(int side, bool dir) {                       //this procedure 
     for (int curPos = numRimPos-1; curPos > 0; curPos--) {   
       *rimsPtr[side][curPos] = *rimsPtr[side][curPos-1];        //shift Color value Clockwise
     }
-    *rimsPtr[side][0] = tempStoreColor;                         //put stored Color value in Position 0 
+    *rimsPtr[side][0] = tempStoreColor;                        
   }
   else {                                                        //turn counter clockwise
     tempStoreColor = *rimsPtr[side][0];                         //Color value of Position 0 is temporarily stored
@@ -241,7 +228,7 @@ const byte* Cube::handCube() {
   return &Color[0][0];
 }
 
-//#define _debugging
+#define _debugging
 #ifdef _debugging
 //This procedure writes the Cube colors to Serial (for debugging purposes)
 void Cube::toScreen() {
@@ -253,7 +240,7 @@ void Cube::toScreen() {
   
   //backSide and TopSide              
   for (curSide = backSide; curSide >= topSide; curSide--) {    
-    for (int i=0; i<3; i++) { // voor alle posities
+    for (int i=0; i<3; i++) { 
       Serial.print("                ");
       for (int j=(3*i); j<(3+3*i); j++) {                    
         int pos = transPos[j];
@@ -422,7 +409,7 @@ Output::Output(bool serial, bool cryst) {
   _cryst  = cryst;
 }
 
-void Output::clrscr() {          //clear screen (go to next line in Serial output)
+void Output::clrscr() {          
   if (_serial) {
     Serial.println();
   }
@@ -431,7 +418,7 @@ void Output::clrscr() {          //clear screen (go to next line in Serial outpu
   }
 }
 
-void Output::txt(String text) {   //write text
+void Output::txt(String text) {  
   if (_serial) {
     Serial.print(text);     
   }
@@ -440,7 +427,7 @@ void Output::txt(String text) {   //write text
   }
 }
 
-void Output::nxtln() {             //go to next line
+void Output::nxtln() {            
   if (_serial) {
     Serial.println();
   }

@@ -1,11 +1,11 @@
-#include "choices.h"
+#include "x.h"
 #include <LiquidCrystal.h>
 #include <PololuLedStrip.h>
 
-Choices LeftPanel(A5, 5); //set 5 options at pin A5
-Choices RightPanel(A4, 3);//set 3 options at pin A3
-Cube MyCube(3);           //would be nice to have DO port of ledstrip as an argument
-Output MyOutput(false, true);  //output to Serial output and or lcd output
+Choices LeftPanel(A5, 5);
+Choices RightPanel(A4, 3);
+Cube MyCube(3);           
+Output MyOutput(false, true); 
 
 
 void setup() {
@@ -16,8 +16,6 @@ void setup() {
   MyOutput.clrscr();
 
   MyOutput.txt("Hello there!");
-
-  MyCube.littleShow();
   MyOutput.clrscr();
 }
 
@@ -31,10 +29,10 @@ const int solveCube = 4;
 
 const bool CW = true;
 
-const int histMax = 30;    //max number of turns in memory
-int turnNr      = 0;       //number of turns done    
-int lastSolved  = 0;       //last time that cube was solved
-int turnsInHist = 0;       //current number of turns in history
+const int histMax = 30;    
+int turnNr      = 0;          
+int lastSolved  = 0;      
+int turnsInHist = 0;       
 byte turnHist[histMax];
 
 bool escFlag = false;
@@ -119,7 +117,7 @@ void loop() {
       } while (!escFlag);  
       break;
     case solveCube:
-      if ((turnsInHist == 0) || ((turnNr-lastSolved)>turnsInHist)) {  //not enough memory to undo until solved
+      if ((turnsInHist == 0) || ((turnNr-lastSolved)>turnsInHist)) { 
         MyCube.reInit();
         lastSolved = 0;
         turnNr = 0;

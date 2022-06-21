@@ -1,4 +1,4 @@
-#define choices_h
+#define x_h
 #define cube_h
 #define output_h
 
@@ -53,7 +53,7 @@ class Cube
     const int leftSide   = 4;
     const int rightSide  = 5;
   
-    static const int numPos  = 9;        //Each side has 9 positions  //needs to be static zijn as number of array elements needs to be fixed before compilation
+    static const int numPos  = 9;      
 
     const bool CW = true;
 
