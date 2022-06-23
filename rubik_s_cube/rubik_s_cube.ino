@@ -14,6 +14,9 @@ void setup() {
 
 }
 
+
+//[6][12][2] = {{{1,7},{1,6},{1,5} side middle and rim
+
 //bool Cube::checkCubeSolved() {
 //  for (int curSide = 0; curSide < numSides; curSide++) {    
 //    byte sideColor = Color[curSide][0]/10;
