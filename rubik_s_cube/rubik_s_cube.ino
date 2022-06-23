@@ -14,6 +14,44 @@ void setup() {
 
 }
 
+//bool Cube::checkCubeSolved() {
+//  for (int curSide = 0; curSide < numSides; curSide++) {    
+//    byte sideColor = Color[curSide][0]/10;
+//    for (int curPos = 1; curPos < numPos; curPos++) {       
+//      if (!(Color[curSide][curPos]/10==sideColor)) return false;  
+//    }
+//  } 
+//  return true;
+
+//void Cube::showTurnCube(int side,bool dir) { 
+//  showTurnSide(side,dir);
+//  showTurnMid(side,dir);
+//  int oppSide = 0;
+//  if (side<2) oppSide = side+2;
+//  if (side>1 && side<4) oppSide = side-2; 
+//  if (side==4) oppSide = 5;
+//  if (side==5) oppSide = 4;
+//  showTurnSide(oppSide,!dir);
+//  delay(delta_t);
+//}
+
+
+//int old_ans = ans;
+//    int userInput = LeftPanel.getOption();
+//    if (ans > -1 && ans < 4) { 
+//      if (userInput == LeftPanel.arrowUp) {
+//         ans++;
+//         if (ans == 4) {
+//           ans = MyCube.groundSide;
+//         }
+//      } 
+//      if (userInput == LeftPanel.arrowDown) {
+//        ans--;
+//        if (ans == -1) {
+//          ans = MyCube.backSide;
+//        }
+//      } 
+
 void loop() {
 
   Face1Row1();
